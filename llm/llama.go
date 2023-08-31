@@ -217,6 +217,64 @@ type llama struct {
 	Running
 }
 
+// checkVRAM returns the available VRAM in MiB on Linux machines with NVIDIA GPUs
+func checkVRAM() (int, error) {
+	cmd := exec.Command("nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits")
+	var stdout bytes.Buffer
+	cmd.Stdout = &stdout
+	err := cmd.Run()
+	if err != nil {
+		return 0, fmt.Errorf("nvidia-smi command failed")
+	}
+
+	// extract the available VRAM from the output
+	output := strings.TrimSpace(stdout.String())
+	vram, err := strconv.Atoi(output)
+	if err != nil {
+		return 0, fmt.Errorf("failed to parse available VRAM: %v", err)
+	}
+
+	return vram, nil
+}
+
+func NumGPU(opts api.Options) int {
+	if opts.NumGPU != -1 {
+		return opts.NumGPU
+	}
+	n := 1 // default to enable metal on macOS
+	if runtime.GOOS == "linux" {
+		vram, err := checkVRAM()
+		if err != nil {
+			if err.Error() != "nvidia-smi command failed" {
+				log.Print(err.Error())
+			}
+			// nvidia driver not installed or no nvidia GPU found
+			return 0
+		}
+		// TODO: this is a very rough heuristic, better would be to calculate this based on number of layers and context size
+		switch {
+		case vram < 500:
+			log.Printf("WARNING: Low VRAM detected, disabling GPU")
+			n = 0
+		case vram < 1000:
+			n = 4
+		case vram < 2000:
+			n = 8
+		case vram < 4000:
+			n = 12
+		case vram < 8000:
+			n = 16
+		case vram < 12000:
+			n = 24
+		case vram < 16000:
+			n = 32
+		default:
+			n = 48
+		}
+	}
+	return n
+}
+
 func newLlama(model string, adapters []string, runner ModelRunner, opts api.Options) (*llama, error) {
 	if _, err := os.Stat(model); err != nil {
 		return nil, err
@@ -236,7 +294,7 @@ func newLlama(model string, adapters []string, runner ModelRunner, opts api.Opti
 		"--rope-freq-base", fmt.Sprintf("%f", opts.RopeFrequencyBase),
 		"--rope-freq-scale", fmt.Sprintf("%f", opts.RopeFrequencyScale),
 		"--batch-size", fmt.Sprintf("%d", opts.NumBatch),
-		"--n-gpu-layers", fmt.Sprintf("%d", opts.NumGPU),
+		"--n-gpu-layers", fmt.Sprintf("%d", NumGPU(opts)),
 		"--embedding",
 	}
 
@@ -306,7 +364,7 @@ func newLlama(model string, adapters []string, runner ModelRunner, opts api.Opti
 func waitForServer(llm *llama) error {
 	// wait for the server to start responding
 	start := time.Now()
-	expiresAt := time.Now().Add(30 * time.Second)
+	expiresAt := time.Now().Add(45 * time.Second)
 	ticker := time.NewTicker(200 * time.Millisecond)
 
 	log.Print("waiting for llama.cpp server to start responding")
