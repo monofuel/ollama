@@ -54,7 +54,9 @@ func chooseRunner(gpuPath, cpuPath string) string {
 	case "windows":
 		files = []string{"server.exe"}
 	case "darwin":
-		files = append(files, "ggml-metal.metal")
+		if llamaPath == osPath(gpuPath) {
+			files = append(files, "ggml-metal.metal")
+		}
 	}
 
 	for _, f := range files {
