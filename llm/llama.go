@@ -271,6 +271,7 @@ func NumGPU(opts api.Options) int {
 		default:
 			n = 48
 		}
+		log.Printf("%d MB VRAM available, loading %d GPU layers", vram, n)
 	}
 	return n
 }
@@ -333,8 +334,6 @@ func newLlama(model string, adapters []string, runner ModelRunner, opts api.Opti
 			runner.Path,
 			append(params, "--port", strconv.Itoa(port))...,
 		)
-		cmd.Stdout = os.Stderr
-		cmd.Stderr = os.Stderr
 
 		cmd.Stdout = os.Stderr
 		cmd.Stderr = os.Stderr
