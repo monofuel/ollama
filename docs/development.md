@@ -6,6 +6,10 @@
 
 Install required tools:
 
+- cmake version 3.24 or higher
+- go version 1.20 or higher
+- gcc version 11.4.0 or higher
+
 ```
 brew install go cmake gcc
 ```
