@@ -1,5 +1,5 @@
-//go:build linux && gpu
-// +build linux,gpu
+//go:build linux
+// +build linux
 
 package llm
 
