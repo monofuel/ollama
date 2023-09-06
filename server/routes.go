@@ -12,6 +12,7 @@ import (
 	"os/signal"
 	"path/filepath"
 	"reflect"
+	"runtime"
 	"strings"
 	"sync"
 	"syscall"
@@ -473,6 +474,13 @@ func Serve(ln net.Listener, origins []string) error {
 		}
 		os.Exit(0)
 	}()
+
+	if runtime.GOOS == "linux" {
+		// check compatibility to log warnings
+		if _, err := llm.CheckVRAM(); err != nil {
+			log.Printf("Warning: GPU support not enabled, you may need to install GPU drivers: %v", err)
+		}
+	}
 
 	return s.Serve(ln)
 }

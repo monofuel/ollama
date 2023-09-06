@@ -217,8 +217,8 @@ type llama struct {
 	Running
 }
 
-// checkVRAM returns the available VRAM in MiB on Linux machines with NVIDIA GPUs
-func checkVRAM() (int, error) {
+// CheckVRAM returns the available VRAM in MiB on Linux machines with NVIDIA GPUs
+func CheckVRAM() (int, error) {
 	cmd := exec.Command("nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits")
 	var stdout bytes.Buffer
 	cmd.Stdout = &stdout
@@ -243,7 +243,7 @@ func NumGPU(opts api.Options) int {
 	}
 	n := 1 // default to enable metal on macOS
 	if runtime.GOOS == "linux" {
-		vram, err := checkVRAM()
+		vram, err := CheckVRAM()
 		if err != nil {
 			if err.Error() != "nvidia-smi command failed" {
 				log.Print(err.Error())
