@@ -57,6 +57,12 @@ func chooseRunner(gpuPath, cpuPath string) string {
 		if llamaPath == osPath(gpuPath) {
 			files = append(files, "ggml-metal.metal")
 		}
+	case "linux":
+		// check if there is a GPU available
+		if _, err := CheckVRAM(); errors.Is(err, errNoGPU) {
+			// this error was logged on start-up, so we don't need to log it again
+			llamaPath = osPath(cpuPath)
+		}
 	}
 
 	for _, f := range files {
@@ -217,6 +223,8 @@ type llama struct {
 	Running
 }
 
+var errNoGPU = errors.New("nvidia-smi command failed")
+
 // CheckVRAM returns the available VRAM in MiB on Linux machines with NVIDIA GPUs
 func CheckVRAM() (int, error) {
 	cmd := exec.Command("nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits")
@@ -224,7 +232,7 @@ func CheckVRAM() (int, error) {
 	cmd.Stdout = &stdout
 	err := cmd.Run()
 	if err != nil {
-		return 0, fmt.Errorf("nvidia-smi command failed")
+		return 0, errNoGPU
 	}
 
 	// extract the available VRAM from the output
