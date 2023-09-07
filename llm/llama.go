@@ -252,7 +252,7 @@ func CheckVRAM() (int, error) {
 }
 
 func NumGPU(opts api.Options) int {
-	return 14
+	return 48
 
 	// if opts.NumGPU != -1 {
 	// 	return opts.NumGPU
