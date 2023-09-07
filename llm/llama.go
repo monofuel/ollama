@@ -227,66 +227,69 @@ var errNoGPU = errors.New("nvidia-smi command failed")
 
 // CheckVRAM returns the available VRAM in MiB on Linux machines with NVIDIA GPUs
 func CheckVRAM() (int, error) {
-	cmd := exec.Command("nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits")
-	var stdout bytes.Buffer
-	cmd.Stdout = &stdout
-	err := cmd.Run()
-	if err != nil {
-		return 0, errNoGPU
-	}
+	return 23000, nil
+	// cmd := exec.Command("nvidia-smi", "--query-gpu=memory.free", "--format=csv,noheader,nounits")
+	// var stdout bytes.Buffer
+	// cmd.Stdout = &stdout
+	// err := cmd.Run()
+	// if err != nil {
+	// 	return 0, errNoGPU
+	// }
 
-	var total int
-	scanner := bufio.NewScanner(&stdout)
-	for scanner.Scan() {
-		line := scanner.Text()
-		vram, err := strconv.Atoi(line)
-		if err != nil {
-			return 0, fmt.Errorf("failed to parse available VRAM: %v", err)
-		}
+	// var total int
+	// scanner := bufio.NewScanner(&stdout)
+	// for scanner.Scan() {
+	// 	line := scanner.Text()
+	// 	vram, err := strconv.Atoi(line)
+	// 	if err != nil {
+	// 		return 0, fmt.Errorf("failed to parse available VRAM: %v", err)
+	// 	}
 
-		total += vram
-	}
+	// 	total += vram
+	// }
 
-	return total, nil
+	// return total, nil
 }
 
 func NumGPU(opts api.Options) int {
-	if opts.NumGPU != -1 {
-		return opts.NumGPU
-	}
-	n := 1 // default to enable metal on macOS
-	if runtime.GOOS == "linux" {
-		vram, err := CheckVRAM()
-		if err != nil {
-			if err.Error() != "nvidia-smi command failed" {
-				log.Print(err.Error())
-			}
-			// nvidia driver not installed or no nvidia GPU found
-			return 0
-		}
-		// TODO: this is a very rough heuristic, better would be to calculate this based on number of layers and context size
-		switch {
-		case vram < 500:
-			log.Printf("WARNING: Low VRAM detected, disabling GPU")
-			n = 0
-		case vram < 1000:
-			n = 4
-		case vram < 2000:
-			n = 8
-		case vram < 4000:
-			n = 12
-		case vram < 8000:
-			n = 16
-		case vram < 12000:
-			n = 24
-		case vram < 16000:
-			n = 32
-		default:
-			n = 48
-		}
-		log.Printf("%d MB VRAM available, loading %d GPU layers", vram, n)
-	}
-	return n
+	return 14
+
+	// if opts.NumGPU != -1 {
+	// 	return opts.NumGPU
+	// }
+	// n := 1 // default to enable metal on macOS
+	// if runtime.GOOS == "linux" {
+	// 	vram, err := CheckVRAM()
+	// 	if err != nil {
+	// 		if err.Error() != "nvidia-smi command failed" {
+	// 			log.Print(err.Error())
+	// 		}
+	// 		// nvidia driver not installed or no nvidia GPU found
+	// 		return 0
+	// 	}
+	// 	// TODO: this is a very rough heuristic, better would be to calculate this based on number of layers and context size
+	// 	switch {
+	// 	case vram < 500:
+	// 		log.Printf("WARNING: Low VRAM detected, disabling GPU")
+	// 		n = 0
+	// 	case vram < 1000:
+	// 		n = 4
+	// 	case vram < 2000:
+	// 		n = 8
+	// 	case vram < 4000:
+	// 		n = 12
+	// 	case vram < 8000:
+	// 		n = 16
+	// 	case vram < 12000:
+	// 		n = 24
+	// 	case vram < 16000:
+	// 		n = 32
+	// 	default:
+	// 		n = 48
+	// 	}
+	// 	log.Printf("%d MB VRAM available, loading %d GPU layers", vram, n)
+	// }
+	// return n
 }
 
 func newLlama(model string, adapters []string, runner ModelRunner, opts api.Options) (*llama, error) {
